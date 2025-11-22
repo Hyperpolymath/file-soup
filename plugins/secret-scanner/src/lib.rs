@@ -8,8 +8,8 @@ use std::fs;
 lazy_static! {
     static ref SECRET_PATTERNS: Vec<(String, Regex)> = vec![
         ("AWS Access Key".to_string(), Regex::new(r"AKIA[0-9A-Z]{16}").unwrap()),
-        ("Generic API Key".to_string(), Regex::new(r"api[_-]?key[\"']?\s*[:=]\s*[\"']?([a-zA-Z0-9]{32,})").unwrap()),
-        ("Generic Secret".to_string(), Regex::new(r"secret[\"']?\s*[:=]\s*[\"']?([a-zA-Z0-9]{32,})").unwrap()),
+        ("Generic API Key".to_string(), Regex::new(r#"api[_-]?key["']?\s*[:=]\s*["']?([a-zA-Z0-9]{32,})"#).unwrap()),
+        ("Generic Secret".to_string(), Regex::new(r#"secret["']?\s*[:=]\s*["']?([a-zA-Z0-9]{32,})"#).unwrap()),
         ("GitHub Token".to_string(), Regex::new(r"ghp_[a-zA-Z0-9]{36}").unwrap()),
         ("GitHub OAuth".to_string(), Regex::new(r"gho_[a-zA-Z0-9]{36}").unwrap()),
         ("Slack Token".to_string(), Regex::new(r"xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}").unwrap()),

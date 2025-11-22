@@ -3,31 +3,19 @@ use git2::{Repository, Status, StatusOptions};
 use std::collections::HashMap;
 use std::path::Path;
 
-pub struct GitStatusPlugin {
-    repo_cache: HashMap<String, Option<Repository>>,
-}
+pub struct GitStatusPlugin;
 
 impl GitStatusPlugin {
     pub fn new() -> Self {
-        Self {
-            repo_cache: HashMap::new(),
-        }
+        Self
     }
 
-    fn find_repository(&mut self, path: &Path) -> Option<&Repository> {
-        let path_str = path.to_string_lossy().to_string();
-
-        // Check cache first
-        if !self.repo_cache.contains_key(&path_str) {
-            // Try to discover repository
-            let repo = Repository::discover(path).ok();
-            self.repo_cache.insert(path_str.clone(), repo);
-        }
-
-        self.repo_cache.get(&path_str)?.as_ref()
+    fn find_repository(path: &Path) -> Option<Repository> {
+        // git2 has its own internal caching, so we don't need to cache
+        Repository::discover(path).ok()
     }
 
-    fn get_file_status(&mut self, repo: &Repository, path: &Path) -> Result<Status, git2::Error> {
+    fn get_file_status(repo: &Repository, path: &Path) -> Result<Status, git2::Error> {
         let workdir = repo.workdir().ok_or_else(|| {
             git2::Error::from_str("Repository has no working directory")
         })?;
@@ -54,7 +42,7 @@ impl GitStatusPlugin {
             .and_then(|head| head.shorthand().map(|s| s.to_string()))
     }
 
-    fn status_to_message(&self, status: Status) -> (String, String, PluginStatus) {
+    fn status_to_message(status: Status) -> (String, String, PluginStatus) {
         if status.is_wt_new() || status.is_index_new() {
             ("New".to_string(), "green".to_string(), PluginStatus::Active)
         } else if status.is_wt_modified() || status.is_index_modified() {
@@ -91,11 +79,8 @@ impl Plugin for GitStatusPlugin {
     }
 
     fn check(&self, context: &PluginContext) -> Result<PluginResult, PluginError> {
-        // Need mutable self for caching, so we'll work around it
-        let mut plugin = GitStatusPlugin::new();
-
         // Find repository
-        let repo = match plugin.find_repository(&context.path) {
+        let repo = match Self::find_repository(&context.path) {
             Some(repo) => repo,
             None => {
                 return Ok(PluginResult::inactive("git-status"));
@@ -103,11 +88,11 @@ impl Plugin for GitStatusPlugin {
         };
 
         // Get branch name
-        let branch = Self::get_branch_name(repo)
+        let branch = Self::get_branch_name(&repo)
             .unwrap_or_else(|| "detached".to_string());
 
         // Get file status
-        let status = match plugin.get_file_status(repo, &context.path) {
+        let status = match Self::get_file_status(&repo, &context.path) {
             Ok(status) => status,
             Err(_) => {
                 // File might be outside repo or other error
@@ -115,7 +100,7 @@ impl Plugin for GitStatusPlugin {
             }
         };
 
-        let (message, color, plugin_status) = plugin.status_to_message(status);
+        let (message, color, plugin_status) = Self::status_to_message(status);
 
         let mut result = PluginResult {
             plugin_name: "git-status".to_string(),

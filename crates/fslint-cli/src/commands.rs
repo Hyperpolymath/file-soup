@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use fslint_core::{Config, PluginLoader, Scanner, ScannerConfig};
-use fslint_plugin_api::PluginMetadata;
+use fslint_core::{Config, PluginLoader, Scanner};
+use fslint_plugin_api::Plugin;
 use std::path::PathBuf;
 
 use crate::output::{OutputFormat, OutputFormatter};
@@ -29,7 +29,7 @@ pub fn scan(path: PathBuf, format: OutputFormat, query_str: Option<String>) -> R
     // Apply query if provided
     let filtered_files = if let Some(query_str) = query_str {
         let query = Query::parse(&query_str)
-            .context("Failed to parse query")?;
+            .map_err(|e| anyhow::anyhow!("Failed to parse query: {}", e))?;
         query.apply(files)
     } else {
         files

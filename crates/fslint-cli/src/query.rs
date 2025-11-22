@@ -1,6 +1,4 @@
 use fslint_core::ScannedFile;
-use fslint_plugin_api::PluginStatus;
-use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Query {
@@ -93,7 +91,7 @@ impl Query {
                 }
                 Filter::Plugin(plugin_name, expected_value) => {
                     let matches = file.results.iter()
-                        .find(|r| r.plugin_name == plugin_name)
+                        .find(|r| &r.plugin_name == plugin_name)
                         .and_then(|r| r.message.as_ref())
                         .map(|msg| msg.contains(expected_value))
                         .unwrap_or(false);

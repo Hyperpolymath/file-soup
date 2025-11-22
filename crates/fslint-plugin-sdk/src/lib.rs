@@ -1,5 +1,5 @@
 use fslint_plugin_api::PluginContext;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Utc};
 use regex::Regex;
 use std::path::Path;
 

@@ -70,17 +70,6 @@ proptest = "1.4"
 tempfile = "3.8"
 criterion = "0.5"
 
-[dependencies]
-fslint-core = { path = "crates/fslint-core" }
-
-[dev-dependencies]
-criterion = { workspace = true }
-tempfile = { workspace = true }
-
-[[bench]]
-name = "scanner_benchmark"
-harness = false
-
 [profile.release]
 opt-level = 3
 lto = true

@@ -17,6 +17,7 @@ FSLint provides contextual metadata about files through tiny, composable plugins
 - **Smart Caching**: Intelligent caching by (path, mtime, size) for fast re-scans
 - **Query Engine**: Powerful filtering with `name:`, `ext:`, `newest:` syntax
 - **Multiple Output Formats**: Table, JSON, or simple text
+- **Offline-First**: Works completely air-gapped, no network calls
 - **Cross-platform**: Works on Linux, macOS, and Windows
 - **Performance Focused**: Configurable max-depth, .gitignore support
 

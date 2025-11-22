@@ -1,7 +1,6 @@
 use colored::*;
 use fslint_core::ScannedFile;
 use fslint_plugin_api::{PluginResult, PluginStatus};
-use std::collections::HashMap;
 
 pub enum OutputFormat {
     Table,

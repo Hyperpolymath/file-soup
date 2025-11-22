@@ -24,3 +24,8 @@ git2 = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "scanner_benchmark"
+harness = false

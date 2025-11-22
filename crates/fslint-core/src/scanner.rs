@@ -2,8 +2,7 @@ use anyhow::{Context, Result};
 use fslint_plugin_api::{PluginContext, PluginResult};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
-use walkdir::{WalkDir, DirEntry};
+use walkdir::WalkDir;
 use ignore::WalkBuilder;
 
 use crate::config::ScannerConfig;
@@ -15,6 +14,12 @@ pub struct Scanner {
     config: ScannerConfig,
     plugin_loader: PluginLoader,
     cache: ResultCache,
+}
+
+/// Simple file entry struct (internal use)
+struct FileEntry {
+    path: PathBuf,
+    metadata: std::fs::Metadata,
 }
 
 /// Scanned file with plugin results
@@ -48,7 +53,7 @@ impl Scanner {
             match self.scan_entry(&entry, &working_dir) {
                 Ok(scanned) => scanned_files.push(scanned),
                 Err(e) => {
-                    eprintln!("Warning: Failed to scan {:?}: {}", entry.path(), e);
+                    eprintln!("Warning: Failed to scan {:?}: {}", entry.path, e);
                 }
             }
 
@@ -65,7 +70,7 @@ impl Scanner {
     }
 
     /// Collect directory entries based on configuration
-    fn collect_entries(&self, path: &Path) -> Result<Vec<DirEntry>> {
+    fn collect_entries(&self, path: &Path) -> Result<Vec<FileEntry>> {
         let mut entries = Vec::new();
 
         if self.config.respect_gitignore {
@@ -83,14 +88,11 @@ impl Scanner {
                 match result {
                     Ok(entry) => {
                         if entry.file_type().map(|ft| ft.is_file()).unwrap_or(false) {
-                            // Convert ignore::DirEntry to walkdir::DirEntry
-                            // We'll use walkdir for consistency
                             if let Ok(metadata) = entry.metadata() {
-                                // Create a simple struct instead
-                                let path = entry.path().to_path_buf();
-                                if let Ok(entry) = walkdir::DirEntry::from_path(&path) {
-                                    entries.push(entry);
-                                }
+                                entries.push(FileEntry {
+                                    path: entry.path().to_path_buf(),
+                                    metadata,
+                                });
                             }
                         }
                     }
@@ -110,10 +112,15 @@ impl Scanner {
                 match result {
                     Ok(entry) => {
                         if entry.file_type().is_file() {
-                            if !self.config.include_hidden && self.is_hidden(&entry) {
+                            if !self.config.include_hidden && self.is_hidden(entry.file_name()) {
                                 continue;
                             }
-                            entries.push(entry);
+                            if let Ok(metadata) = entry.metadata() {
+                                entries.push(FileEntry {
+                                    path: entry.path().to_path_buf(),
+                                    metadata,
+                                });
+                            }
                         }
                     }
                     Err(e) => eprintln!("Warning: {}", e),
@@ -124,19 +131,18 @@ impl Scanner {
         Ok(entries)
     }
 
-    /// Check if entry is hidden
-    fn is_hidden(&self, entry: &DirEntry) -> bool {
-        entry.file_name()
+    /// Check if filename is hidden
+    fn is_hidden(&self, filename: &std::ffi::OsStr) -> bool {
+        filename
             .to_str()
             .map(|s| s.starts_with('.'))
             .unwrap_or(false)
     }
 
     /// Scan a single entry
-    fn scan_entry(&mut self, entry: &DirEntry, working_dir: &Path) -> Result<ScannedFile> {
-        let path = entry.path().to_path_buf();
-        let metadata = entry.metadata()
-            .with_context(|| format!("Failed to get metadata for {:?}", path))?;
+    fn scan_entry(&mut self, entry: &FileEntry, working_dir: &Path) -> Result<ScannedFile> {
+        let path = entry.path.clone();
+        let metadata = entry.metadata.clone();
 
         // Check cache
         let cache_key = (path.clone(), metadata.modified().ok(), metadata.len());

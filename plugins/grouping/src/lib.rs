@@ -10,7 +10,7 @@ impl GroupingPlugin {
     }
 
     fn detect_group(&self, context: &PluginContext) -> Option<(String, String, String)> {
-        let path_str = context.path.to_string_lossy();
+        let _path_str = context.path.to_string_lossy();
 
         // Node modules
         if patterns::matches(&context.path, &patterns::Patterns::node_modules()) {
